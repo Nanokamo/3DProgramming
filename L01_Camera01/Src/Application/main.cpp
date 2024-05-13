@@ -64,6 +64,49 @@ void Application::PreUpdate()
 // ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// ///// /////
 void Application::Update()
 {
+
+	// ハム太郎の更新
+	{
+		/*if (GetAsyncKeyState('W') & 0x8000)m_HamuPos.z += 0.1f;
+		if (GetAsyncKeyState('D') & 0x8000)m_HamuPos.x += 0.1f;
+		if (GetAsyncKeyState('S') & 0x8000)m_HamuPos.z -= 0.1f;
+		if (GetAsyncKeyState('A') & 0x8000)m_HamuPos.x -= 0.1f;*/
+		//if (GetAsyncKeyState(VK_SPACE) & 0x8000)m_HamuPos.y += 0.1f;
+		//if (GetAsyncKeyState(VK_CONTROL) & 0x8000)m_HamuPos.y -= 0.1f;
+		//m_HamuWorld = Math::Matrix::CreateTranslation(m_HamuPos);
+
+
+		// 方向ベクトル
+		// キャラクターの移動速度(まねしない)
+		float moveSpd = 0.05f;
+
+		// 現在の座標を " 返 す "
+		Math::Vector3 nowPos = m_HamuWorld.Translation();
+
+		// ベクトル = 向きと方向と大きさ == 矢印
+
+		// 移動したい「 方向ベクトル 」 = 絶対に長さが「１」でなければならない！！！
+		Math::Vector3 moveVec = Math::Vector3::Zero;
+
+		if (GetAsyncKeyState('W') & 0x8000) { moveVec.z = 1.0f;  }
+		if (GetAsyncKeyState('D') & 0x8000) { moveVec.x = 1.0f;  }
+		if (GetAsyncKeyState('S') & 0x8000) { moveVec.z = -1.0f; }
+		if (GetAsyncKeyState('A') & 0x8000) { moveVec.x = -1.0f; }
+
+		// 正規化(ノーマライズ)
+		moveVec.Normalize();
+
+		moveVec *= moveSpd;
+		nowPos += moveVec;
+
+		// カメラの座標用
+		//m_HamuPos = nowPos;
+
+		// キャラクターのWorld行列を作る処理
+		m_HamuWorld = Math::Matrix::CreateTranslation(nowPos);
+
+	}
+
 	// カメラ行列
 	{
 		//angle += 0.5f;
@@ -80,25 +123,17 @@ void Application::Update()
 		Math::Matrix _mYRotation = Math::Matrix::CreateRotationY(DirectX::XMConvertToRadians(angle));
 
 		// どこに配置されているか？
-		Math::Matrix _mTrans = Math::Matrix::CreateTranslation(0.0f, 6.0f, -5.0f);
+		//Math::Matrix _mTrans = Math::Matrix::CreateTranslation(m_HamuPos.x + 0.0f, m_HamuPos.y + 6.0f, m_HamuPos.z + -5.0f);
+		Math::Matrix _mTrans = Math::Matrix::CreateTranslation(0.0f, 6.0f,-5.0f);
 
 		// カメラの " ワールド行列 " を作成し、適応させる
-		Math::Matrix _worldMat = _mScale * _mRotation  * _mTrans * _mYRotation;
+		//Math::Matrix _worldMat = _mScale * _mRotation  * _mTrans * _mYRotation;
+
+		// 親子関係
+		Math::Matrix _worldMat = _mScale * _mRotation  * _mTrans * _mYRotation * m_HamuWorld;
 		m_spCamera->SetCameraMatrix(_worldMat);
 
-		// ハム太郎の更新
-		{
-			if (GetAsyncKeyState('W') & 0x8000)m_HamuPos.z += 0.1f;
-			if (GetAsyncKeyState('D') & 0x8000)m_HamuPos.x += 0.1f;
-			if (GetAsyncKeyState('S') & 0x8000)m_HamuPos.z -= 0.1f;
-			if (GetAsyncKeyState('A'))m_HamuPos.x -= 0.1f;
-
-			if (GetAsyncKeyState(VK_SPACE) & 0x8000)m_HamuPos.y += 0.1f;
-			if (GetAsyncKeyState(VK_CONTROL) & 0x8000)m_HamuPos.y -= 0.1f;
-			
-
-			m_HamuWorld = Math::Matrix::CreateTranslation(m_HamuPos);
-		}
+		
 	}
 }
 
