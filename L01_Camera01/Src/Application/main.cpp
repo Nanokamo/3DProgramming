@@ -66,11 +66,39 @@ void Application::Update()
 {
 	// カメラ行列
 	{
-		Math::Matrix _localPos = Math::Matrix::CreateTranslation(0, 6.0f, 0);
+		//angle += 0.5f;
+		if (angle > 360.0f)
+		{
+			angle = 0.0f;
+		}
+
+		// どれくらいの大きさか？
+		Math::Matrix _mScale = Math::Matrix::CreateScale(1);
+
+		// どれだけ傾けているか？
+		Math::Matrix _mRotation = Math::Matrix::CreateRotationX(DirectX::XMConvertToRadians(45));
+		Math::Matrix _mYRotation = Math::Matrix::CreateRotationY(DirectX::XMConvertToRadians(angle));
+
+		// どこに配置されているか？
+		Math::Matrix _mTrans = Math::Matrix::CreateTranslation(0.0f, 6.0f, -5.0f);
 
 		// カメラの " ワールド行列 " を作成し、適応させる
-		Math::Matrix _worldMat = _localPos;
+		Math::Matrix _worldMat = _mScale * _mRotation  * _mTrans * _mYRotation;
 		m_spCamera->SetCameraMatrix(_worldMat);
+
+		// ハム太郎の更新
+		{
+			if (GetAsyncKeyState('W') & 0x8000)m_HamuPos.z += 0.1f;
+			if (GetAsyncKeyState('D') & 0x8000)m_HamuPos.x += 0.1f;
+			if (GetAsyncKeyState('S') & 0x8000)m_HamuPos.z -= 0.1f;
+			if (GetAsyncKeyState('A'))m_HamuPos.x -= 0.1f;
+
+			if (GetAsyncKeyState(VK_SPACE) & 0x8000)m_HamuPos.y += 0.1f;
+			if (GetAsyncKeyState(VK_CONTROL) & 0x8000)m_HamuPos.y -= 0.1f;
+			
+
+			m_HamuWorld = Math::Matrix::CreateTranslation(m_HamuPos);
+		}
 	}
 }
 
@@ -129,10 +157,11 @@ void Application::Draw()
 	KdShaderManager::Instance().m_StandardShader.BeginLit();
 	{
 
-		Math::Matrix _mat = Math::Matrix::Identity;
+		
 		// Math::Matrix _mat = Math::Matrix::CreateTranslation(0, 0, 5);
 		// _mat._43 = 5.0f; ← この処理みたいに直接いじらない
-		KdShaderManager::Instance().m_StandardShader.DrawPolygon(*m_spPoly, _mat);
+
+		KdShaderManager::Instance().m_StandardShader.DrawPolygon(*m_spPoly, m_HamuWorld);
 
 		KdShaderManager::Instance().m_StandardShader.DrawModel(*m_spModel);
 	}
@@ -194,9 +223,9 @@ bool Application::Init(int w, int h)
 	// フルスクリーン確認
 	//===================================================================
 	bool bFullScreen = false;
-	if (MessageBoxA(m_window.GetWndHandle(), "フルスクリーンにしますか？", "確認", MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES) {
+	/*if (MessageBoxA(m_window.GetWndHandle(), "フルスクリーンにしますか？", "確認", MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES) {
 		bFullScreen = true;
-	}
+	}*/
 
 	//===================================================================
 	// Direct3D初期化
@@ -247,6 +276,7 @@ bool Application::Init(int w, int h)
 	//===================================================================
 	m_spPoly	= std::make_shared<KdSquarePolygon>();
 	m_spPoly->SetMaterial("Asset/Data/LessonData/Character/Hamu.png");
+	m_spPoly->SetPivot(KdSquarePolygon::PivotType::Center_Bottom);
 
 	//===================================================================
 	// 地形モデルの初期化
